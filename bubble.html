@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <link rel="stylesheet" href="bubble.css">
+</head>
+<body>
+  <div id="bubble">
+    💬
+    <div id="badge"></div>
+  </div>
+
+  <script>
+  const { ipcRenderer } = require('electron');
+  const remote = require('@electron/remote');
+  const currentWindow = remote.getCurrentWindow();
+
+  const bubble = document.getElementById('bubble');
+  const badge = document.getElementById('badge');
+
+  ipcRenderer.on('update-badge', (e, count) => {
+    badge.style.display = 'block';
+    badge.textContent = count > 9 ? '9+' : count;
+  });
+
+  ipcRenderer.on('reset-badge', () => {
+    badge.style.display = 'none';
+  });
+
+  bubble.addEventListener('click', (e) => {
+    if (e.button === 2) return; // right-click shouldn't trigger chat
+    ipcRenderer.send('open-chat');
+    window.close();
+  });
+
+  let isDragging = false;
+  let offset = { x: 0, y: 0 };
+
+  bubble.addEventListener('mousedown', (e) => {
+    if (e.button === 2) {
+      const bounds = currentWindow.getBounds();
+      offset = {
+        x: e.screenX - bounds.x,
+        y: e.screenY - bounds.y
+      };
+      isDragging = true;
+    }
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (isDragging) {
+      currentWindow.setBounds({
+        x: e.screenX - offset.x,
+        y: e.screenY - offset.y,
+        width: currentWindow.getBounds().width,
+        height: currentWindow.getBounds().height
+      });
+    }
+  });
+
+  window.addEventListener('mouseup', (e) => {
+    if (e.button === 2) isDragging = false;
+  });
+
+  window.addEventListener('contextmenu', (e) => e.preventDefault());
+</script>
+
+</body>
+</html>

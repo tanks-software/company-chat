@@ -1,0 +1,39 @@
+{
+  "name": "company-chat",
+  "version": "1.0.0",
+  "description": "Electron Firebase company chat",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "dist": "electron-builder --publish=always"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tanks-software/company-chat.git"
+  },
+  "author": "Tanks Software",
+  "dependencies": {
+    "@electron/remote": "^2.0.1",
+    "electron-updater": "^6.6.2",
+    "firebase": "^9.22.2",
+    "googleapis": "^148.0.0",
+    "open": "^10.1.2"
+  },
+  "devDependencies": {
+    "electron": "^36.2.0",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.company.chat",
+    "productName": "Company Chat",
+    "publish": [
+      {
+        "provider": "github"
+      }
+    ],
+    "win": {
+      "target": "nsis"
+    }
+  }
+}

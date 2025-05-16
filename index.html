@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Company Chat</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Username overlay -->
+  <div id="username-overlay">
+    <div class="overlay-box">
+      <h2>Enter Your Name</h2>
+      <input type="text" id="username-input" placeholder="e.g. John" />
+      <button id="enter-chat-btn">Enter Chat</button>
+    </div>
+  </div>
+
+  <!-- Chat window -->
+  <div class="chat-window">
+    <!-- Top title bar -->
+    <div class="title-bar">
+      <span class="title">Company Chat</span>
+      <div class="actions">
+        <button id="theme-toggle" title="Toggle Theme">🌙</button>
+        <button id="clear-chat-btn" title="Clear Chat">🧹</button>
+        <button id="min-btn" title="Minimize">–</button>
+        <button id="close-btn" title="Close">×</button>
+      </div>
+    </div>
+    <!-- Add this just below title bar in your HTML -->
+    <div id="online-users" class="online-users">🟢 Online: <span id="users-list"></span></div>
+    <div class="search-bar">
+  <input type="text" id="search-input" placeholder="🔍 Search by name or keyword..." />
+</div>
+
+
+    <!-- Messages -->
+    <div id="messages" class="messages"></div>
+
+    <!-- Input area -->
+    <div class="input-area">
+      <textarea id="msgInput" placeholder="Type your message..."></textarea>
+      <button id="sendBtn">Send</button>
+
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
