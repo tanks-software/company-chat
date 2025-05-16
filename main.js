@@ -11,6 +11,9 @@ let bubbleWin;
 let unreadCount = 0;
 let allowMinimize = false;
 let lastBubblePosition = { x: null, y: null };
+let lastHiddenTimestamp = null;
+let lastWindowHideTime = null;
+
 
 // ✅ Create the bubble window
 function showBubbleWindow() {
@@ -20,8 +23,8 @@ function showBubbleWindow() {
   console.log("🟢 Showing bubble...");
 
   bubbleWin = new BrowserWindow({
-    width: 80,
-    height: 80,
+    width: 300,
+    height: 160,
     x: lastBubblePosition.x ?? undefined,
     y: lastBubblePosition.y ?? undefined,
     frame: false,
@@ -43,6 +46,8 @@ function showBubbleWindow() {
   bubbleWin.setVisibleOnAllWorkspaces(true);
   bubbleWin.setIgnoreMouseEvents(false);
   bubbleWin.setFocusable(true);
+
+
 
   bubbleWin.on('closed', () => {
     bubbleWin = null;
@@ -68,11 +73,12 @@ function createWindows() {
   remoteMain.enable(mainWin.webContents);
 
   mainWin.on('hide', () => {
-    console.log("Main window hidden, showing bubble...");
-    isMainWindowHidden = true;
-    unreadCount = 0;
-    showBubbleWindow();
-  });
+  console.log("Main window hidden, showing bubble...");
+  isMainWindowHidden = true;
+  unreadCount = 0;
+  lastWindowHideTime = Date.now(); // ✅ mark time when hidden
+  showBubbleWindow();
+});
 
   mainWin.on('show', () => {
     isMainWindowHidden = false;
@@ -188,14 +194,31 @@ ipcMain.on('open-chat', () => {
 });
 
 // ✅ Handle unread message count
-ipcMain.on('new-message', () => {
-  if (isMainWindowHidden) {
+ipcMain.on('new-message', (event, messageData) => {
+  const { timestamp, text, name } = messageData;
+
+  if (isMainWindowHidden && timestamp && timestamp > lastWindowHideTime) {
     unreadCount++;
     if (bubbleWin && (!mainWin || !mainWin.isFocused())) {
+      console.log("🧪 Sending to bubble:", name, text);
       bubbleWin.webContents.send('update-badge', unreadCount);
+      bubbleWin.webContents.send('preview-message', {
+        name: name || 'Unknown',
+        text: text || ''
+      });
     }
   }
 });
+
+
+
+
+// ✅ Allow renderer to query when window was last hidden
+ipcMain.handle('get-last-hide-time', () => {
+  return lastWindowHideTime || 0;
+});
+
+
 
 // ✅ Minimize flag
 ipcMain.on('allow-minimize', () => {

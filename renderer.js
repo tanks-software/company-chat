@@ -25,6 +25,7 @@ const db = firebase.firestore();
 let userName = "";
 let lastSentMessage = "";
 let lastSentTime = null;
+let lastNotifiedTimestamp = 0;
 let firstSnapshotLoaded = false;
 let allMessages = [];
 
@@ -106,26 +107,46 @@ db.collection('companyChat')
         firstSnapshotLoaded &&
         name !== userName &&
         messageTime &&
-        (!lastSentTime || messageTime > lastSentTime)
+        !isWindowFocused &&
+        typeof messageTime.getTime === 'function'
       ) {
-        audio.play().catch(err => console.warn('Sound play error:', err));
+        const currentMsgTime = messageTime.getTime();
 
-        if (Notification.permission === 'granted') {
-          new Notification(`${name}`, {
-            body: message,
-            silent: true
-          });
-        }
+        // Ask main process when the window was hidden
+        ipcRenderer.invoke('get-last-hide-time').then(lastHideTime => {
+          if (
+            lastHideTime &&
+            currentMsgTime > lastHideTime &&
+            currentMsgTime > lastNotifiedTimestamp
+          ) {
+            lastNotifiedTimestamp = currentMsgTime;
 
-        if (!isWindowFocused) {
-          ipcRenderer.send('new-message');
-        }
+            audio.play().catch(err => console.warn('Sound play error:', err));
+
+            if (Notification.permission === 'granted') {
+              new Notification(`${name}`, {
+                body: message,
+                silent: true
+              });
+            }
+
+            // ✅ Send full info to bubble
+            ipcRenderer.send('new-message', {
+              timestamp: currentMsgTime,
+              text: message,
+              name: name
+            });
+          }
+        });
       }
     });
 
     renderMessages();
     firstSnapshotLoaded = true;
   });
+
+
+
 
 function renderMessages() {
   const query = searchInput.value.trim().toLowerCase();

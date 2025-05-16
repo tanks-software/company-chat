@@ -1,6 +1,6 @@
 {
   "name": "company-chat",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Electron Firebase company chat",
   "main": "main.js",
   "scripts": {

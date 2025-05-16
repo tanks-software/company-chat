@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="UTF-8">
   <link rel="stylesheet" href="bubble.css">
 </head>
 <body>
@@ -8,61 +9,87 @@
     💬
     <div id="badge"></div>
   </div>
+  <div id="preview"></div>
 
   <script>
-  const { ipcRenderer } = require('electron');
-  const remote = require('@electron/remote');
-  const currentWindow = remote.getCurrentWindow();
+    const { ipcRenderer } = require('electron');
+    const remote = require('@electron/remote');
+    const currentWindow = remote.getCurrentWindow();
 
-  const bubble = document.getElementById('bubble');
-  const badge = document.getElementById('badge');
+    const bubble = document.getElementById('bubble');
+    const badge = document.getElementById('badge');
+    const preview = document.getElementById('preview');
 
-  ipcRenderer.on('update-badge', (e, count) => {
-    badge.style.display = 'block';
-    badge.textContent = count > 9 ? '9+' : count;
-  });
+    console.log("✅ bubble script loaded");
 
-  ipcRenderer.on('reset-badge', () => {
-    badge.style.display = 'none';
-  });
+    ipcRenderer.on('update-badge', (e, count) => {
+      badge.style.display = 'block';
+      badge.textContent = count > 9 ? '9+' : count;
+    });
 
-  bubble.addEventListener('click', (e) => {
-    if (e.button === 2) return; // right-click shouldn't trigger chat
-    ipcRenderer.send('open-chat');
-    window.close();
-  });
+    ipcRenderer.on('reset-badge', () => {
+      badge.style.display = 'none';
+    });
 
-  let isDragging = false;
-  let offset = { x: 0, y: 0 };
+    ipcRenderer.on('preview-message', (e, messageData) => {
+  const { name, text } = messageData || {};
 
-  bubble.addEventListener('mousedown', (e) => {
-    if (e.button === 2) {
-      const bounds = currentWindow.getBounds();
-      offset = {
-        x: e.screenX - bounds.x,
-        y: e.screenY - bounds.y
-      };
-      isDragging = true;
-    }
-  });
+  console.log("📩 Showing preview:", name, text);
 
-  window.addEventListener('mousemove', (e) => {
-    if (isDragging) {
-      currentWindow.setBounds({
-        x: e.screenX - offset.x,
-        y: e.screenY - offset.y,
-        width: currentWindow.getBounds().width,
-        height: currentWindow.getBounds().height
-      });
-    }
-  });
+  preview.innerHTML = `
+    <div class="preview-name">${name || 'Unknown'}:</div>
+    <div class="preview-text">${text || ''}</div>
+  `;
 
-  window.addEventListener('mouseup', (e) => {
-    if (e.button === 2) isDragging = false;
-  });
+  preview.classList.add('show');
 
-  window.addEventListener('contextmenu', (e) => e.preventDefault());
-</script>
+  clearTimeout(preview._hideTimeout);
+  preview._hideTimeout = setTimeout(() => {
+    preview.classList.remove('show');
+    setTimeout(() => {
+      preview.innerHTML = '';
+    }, 500);
+  }, 4500);
+});
 
+
+    bubble.addEventListener('click', (e) => {
+      if (e.button === 2) return;
+      ipcRenderer.send('open-chat');
+      window.close();
+    });
+
+    // Dragging logic (right-click drag)
+    let isDragging = false;
+    let offset = { x: 0, y: 0 };
+
+    bubble.addEventListener('mousedown', (e) => {
+      if (e.button === 2) {
+        const bounds = currentWindow.getBounds();
+        offset = {
+          x: e.screenX - bounds.x,
+          y: e.screenY - bounds.y
+        };
+        isDragging = true;
+      }
+    });
+
+    window.addEventListener('mousemove', (e) => {
+      if (isDragging) {
+        currentWindow.setBounds({
+          x: e.screenX - offset.x,
+          y: e.screenY - offset.y,
+          width: currentWindow.getBounds().width,
+          height: currentWindow.getBounds().height
+        });
+      }
+    });
+
+    window.addEventListener('mouseup', (e) => {
+      if (e.button === 2) isDragging = false;
+    });
+
+    window.addEventListener('contextmenu', (e) => e.preventDefault());
+  </script>
 </body>
 </html>
