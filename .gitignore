@@ -4,3 +4,4 @@ dist/
 *.tmp
 *.zip
 realtime-chat-win32-x64/
+token.json
