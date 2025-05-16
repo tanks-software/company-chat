@@ -1,6 +1,6 @@
 {
   "name": "company-chat",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Electron Firebase company chat",
   "main": "main.js",
   "scripts": {
@@ -30,7 +30,9 @@
     "productName": "Company Chat",
     "publish": [
       {
-        "provider": "github"
+        "provider": "github",
+        "owner": "tanks-software",
+        "repo": "company-chat"
       }
     ],
     "win": {

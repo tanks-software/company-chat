@@ -130,6 +130,11 @@ autoUpdater.on('checking-for-update', () => {
 
 autoUpdater.on('update-available', (info) => {
   console.log(`⬇️ Update available: v${info.version}`);
+  dialog.showMessageBox({
+    type: 'info',
+    title: 'Update Available',
+    message: `A new version (${info.version}) is available. It will be downloaded in the background.`
+  });
 });
 
 autoUpdater.on('update-not-available', () => {
@@ -145,7 +150,20 @@ autoUpdater.on('download-progress', (progress) => {
 });
 
 autoUpdater.on('update-downloaded', () => {
-  console.log("✅ Update downloaded. Will install on app quit.");
+  console.log("✅ Update downloaded. Prompting user to install.");
+
+  const response = dialog.showMessageBoxSync({
+    type: 'question',
+    buttons: ['Restart Now', 'Later'],
+    defaultId: 0,
+    cancelId: 1,
+    title: 'Update Ready',
+    message: 'An update has been downloaded. Would you like to restart the app now to apply the update?'
+  });
+
+  if (response === 0) {
+    autoUpdater.quitAndInstall();
+  }
 });
 
 // ✅ Handle chat window open from bubble
