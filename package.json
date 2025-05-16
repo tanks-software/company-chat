@@ -22,7 +22,8 @@
   },
   "devDependencies": {
     "electron": "^36.2.0",
-    "electron-builder": "^26.0.12"
+    "electron-builder": "^26.0.12",
+    "electron-packager": "^17.1.2"
   },
   "build": {
     "appId": "com.company.chat",
