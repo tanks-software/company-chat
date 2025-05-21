@@ -35,6 +35,7 @@
         "repo": "company-chat"
       }
     ],
+    "releaseType":"release",
     "win": {
       "target": "nsis"
     }
