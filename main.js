@@ -31,6 +31,9 @@ function showBubbleWindow() {
     transparent: true,
     backgroundColor: '#00000000',
     resizable: false,
+    title: '', // ✅ Set empty title
+    focusable: false,     
+    type: 'toolbar', 
     alwaysOnTop: true,
     skipTaskbar: true,
     webPreferences: {
@@ -41,6 +44,7 @@ function showBubbleWindow() {
   });
 
   remoteMain.enable(bubbleWin.webContents);
+  bubbleWin.setTitle(''); 
   bubbleWin.loadFile('bubble.html');
   bubbleWin.setAlwaysOnTop(true, 'floating');
   bubbleWin.setVisibleOnAllWorkspaces(true);

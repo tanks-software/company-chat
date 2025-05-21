@@ -1,4 +1,4 @@
-// renderer.js
+// renderer.js (with delete + edit support re-applied)
 let isWindowFocused = true;
 window.addEventListener('focus', () => isWindowFocused = true);
 window.addEventListener('blur', () => isWindowFocused = false);
@@ -97,7 +97,7 @@ db.collection('companyChat')
 
     snapshot.forEach(doc => {
       const data = doc.data();
-      allMessages.push(data);
+      allMessages.push({ id: doc.id, ...data });
 
       const name = data.name;
       const message = data.message;
@@ -112,7 +112,6 @@ db.collection('companyChat')
       ) {
         const currentMsgTime = messageTime.getTime();
 
-        // Ask main process when the window was hidden
         ipcRenderer.invoke('get-last-hide-time').then(lastHideTime => {
           if (
             lastHideTime &&
@@ -120,17 +119,13 @@ db.collection('companyChat')
             currentMsgTime > lastNotifiedTimestamp
           ) {
             lastNotifiedTimestamp = currentMsgTime;
-
             audio.play().catch(err => console.warn('Sound play error:', err));
-
             if (Notification.permission === 'granted') {
               new Notification(`${name}`, {
                 body: message,
                 silent: true
               });
             }
-
-            // ✅ Send full info to bubble
             ipcRenderer.send('new-message', {
               timestamp: currentMsgTime,
               text: message,
@@ -145,9 +140,6 @@ db.collection('companyChat')
     firstSnapshotLoaded = true;
   });
 
-
-
-
 function renderMessages() {
   const query = searchInput.value.trim().toLowerCase();
   messagesDiv.innerHTML = '';
@@ -158,14 +150,15 @@ function renderMessages() {
     return name.toLowerCase().includes(query) || msg.toLowerCase().includes(query);
   });
 
-  filtered.forEach(data => {
+  filtered.forEach((data, index) => {
     const time = data.timestamp?.toDate()?.toLocaleTimeString([], {
-      hour: '2-digit',
-      minute: '2-digit'
+      hour: '2-digit', minute: '2-digit'
     }) || '';
 
     const div = document.createElement('div');
     div.classList.add('message-bubble');
+    const isOwn = data.name === userName;
+
     div.innerHTML = `
       <div class="avatar">${data.name?.charAt(0).toUpperCase() || 'U'}</div>
       <div class="bubble-content">
@@ -173,20 +166,61 @@ function renderMessages() {
           <span class="name">${data.name}</span>
           <span class="time">${time}</span>
         </div>
-        <div class="bubble-text">${renderMessageContent(data.message)}</div>
+        <div class="bubble-text" id="text-${index}">${renderMessageContent(data.message)}</div>
+        ${isOwn ? `
+        <div class="bubble-actions">
+          <button class="edit-btn" data-index="${index}" data-id="${data.id}" data-original="${data.message.replace(/`/g, '\`')}">✏️</button>
+          <button class="delete-btn" data-id="${data.id}">🗑</button>
+        </div>` : ''}
       </div>
     `;
     messagesDiv.appendChild(div);
   });
 
   messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+  messagesDiv.querySelectorAll('.delete-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.getAttribute('data-id');
+      if (confirm("Delete this message?")) {
+        await db.collection('companyChat').doc(id).delete();
+      }
+    });
+  });
+
+  messagesDiv.querySelectorAll('.edit-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const index = btn.getAttribute('data-index');
+      const id = btn.getAttribute('data-id');
+      const originalText = btn.getAttribute('data-original');
+
+      const bubbleText = document.getElementById(`text-${index}`);
+      bubbleText.innerHTML = `
+        <textarea id="edit-input-${index}" class="edit-textarea">${originalText}</textarea>
+        <div class="edit-actions">
+          <button id="save-${index}">✅</button>
+          <button id="cancel-${index}">❌</button>
+        </div>
+      `;
+
+      document.getElementById(`save-${index}`).addEventListener('click', async () => {
+        const newMsg = document.getElementById(`edit-input-${index}`).value.trim();
+        if (newMsg && newMsg !== originalText) {
+          await db.collection('companyChat').doc(id).update({ message: newMsg });
+        }
+      });
+
+      document.getElementById(`cancel-${index}`).addEventListener('click', () => {
+        bubbleText.innerHTML = renderMessageContent(originalText);
+      });
+    });
+  });
 }
 
 minBtn.addEventListener('click', () => {
   ipcRenderer.send('allow-minimize');
-  BrowserWindow.getFocusedWindow().hide(); // ⛔️ previously .minimize()
+  BrowserWindow.getFocusedWindow().hide();
 });
-;
 
 closeBtn.addEventListener('click', () => {
   ipcRenderer.send('confirm-close');
@@ -208,18 +242,14 @@ clearChatBtn.addEventListener('click', async () => {
   const confirmClear = confirm("⚠️ Are you sure you want to delete all chat messages?");
   if (!confirmClear) return;
 
-  try {
-    const snapshot = await db.collection('companyChat').get();
-    const batch = db.batch();
-    snapshot.forEach(doc => batch.delete(doc.ref));
-    await batch.commit();
-    lastSentTime = null;
-    firstSnapshotLoaded = false;
-    messagesDiv.innerHTML = '';
-    alert("✅ Chat cleared. You can start fresh!");
-  } catch (err) {
-    alert("❌ Failed to clear chat.");
-  }
+  const snapshot = await db.collection('companyChat').get();
+  const batch = db.batch();
+  snapshot.forEach(doc => batch.delete(doc.ref));
+  await batch.commit();
+  lastSentTime = null;
+  firstSnapshotLoaded = false;
+  messagesDiv.innerHTML = '';
+  alert("✅ Chat cleared.");
 });
 
 searchInput.addEventListener('input', renderMessages);

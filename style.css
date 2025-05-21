@@ -253,3 +253,36 @@ html, body {
   height: 100%;
   overflow: hidden;
 }
+.edit-textarea {
+  width: 100%;
+  font-size: 14px;
+  padding: 4px 6px;
+  margin-top: 4px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  resize: vertical;
+  min-height: 30px;
+  max-height: 60px;
+  box-sizing: border-box;
+}
+
+.edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.edit-actions button {
+  background: #3f51b5;
+  border: none;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.edit-actions button:hover {
+  background: #303f9f;
+}
